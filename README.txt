@@ -1,0 +1,1 @@
+This modules integrates the VCS (Virtual Card Services) payment gateway with Drupal Commerce.
