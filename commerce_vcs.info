@@ -16,8 +16,3 @@ files[] = includes/commerce_vcs.admin.inc
 ; Simple tests
 ; files[] = tests/commerce_vcs.test
 
-; Information added by drupal.org packaging script on 2013-04-10
-version = "7.x-1.0-x"
-core = "7.x"
-project = "commerce_vcs"
-datestamp = "1348795867"
