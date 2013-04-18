@@ -15,4 +15,3 @@ files[] = includes/commerce_vcs.admin.inc
 
 ; Simple tests
 ; files[] = tests/commerce_vcs.test
-
