@@ -363,13 +363,13 @@ function commerce_vcs_aim_submit_form_submit($payment_method, $pane_form, $pane_
   }
 
   // Build a name-value pair array for this transaction.
-  $nvp = array(
-    'x_type' => commerce_vcs_txn_type($txn_type),
-    'x_method' => 'CC',
-    'x_amount' => commerce_currency_amount_to_decimal($charge['amount'], $charge['currency_code']),
-    'x_card_num' => $pane_values['credit_card']['number'],
-    'x_exp_date' => $pane_values['credit_card']['exp_month'] . $pane_values['credit_card']['exp_year'],
-  );
+ // $nvp = array(
+  //  'x_type' => commerce_vcs_txn_type($txn_type),
+    //'x_method' => 'CC',
+    //'x_amount' => commerce_currency_amount_to_decimal($charge['amount'], $charge['currency_code']),
+    //'x_card_num' => $pane_values['credit_card']['number'],
+    //'x_exp_date' => $pane_values['credit_card']['exp_month'] . $pane_values['credit_card']['exp_year'],
+  //);
 
   if (isset($pane_values['credit_card']['code'])) {
     $nvp['x_card_code'] = $pane_values['credit_card']['code'];
