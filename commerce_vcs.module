@@ -1302,9 +1302,9 @@ function commerce_vcs_cim_server_url($txn_mode) {
   switch ($txn_mode) {
     case VCS_TXN_MODE_LIVE:
     case VCS_TXN_MODE_LIVE_TEST:
-      return 'https://www.vcs.co.za/vterminal/response.asp';
+      return 'www.vcs.co.za/vvonline/ccform.asp';
     case VCS_TXN_MODE_DEVELOPER:
-      return 'https://www.vcs.co.za/vterminal/response.asp';
+      return 'www.vcs.co.za/vvonline/ccform.asp';
   }
 }
 
