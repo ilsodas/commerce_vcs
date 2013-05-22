@@ -45,18 +45,10 @@ function commerce_vcs_commerce_payment_method_info() {
 function commerce_vcs_settings_form($settings = NULL) {
   $form = array();
 
-  $form['merchant_id'] = array(
-    '#type' => 'textfield',
-    '#title' => t('vcs Merchant ID'),
-    '#description' => t('The Merchant ID as given by the vcs system. Used to uniquely identify the receiving account.'),
-    '#default_value' => isset($settings['merchant_id']) ? $settings['merchant_id'] : '',
-    '#required' => TRUE,
-  );
-
   $form['merchant_key'] = array(
     '#type' => 'textfield',
-    '#title' => t('vcs Merchant Key'),
-    '#description' => t('The Merchant Key as given by the vcs system.'),
+    '#title' => t('VCS Terminal ID as given by the VCS'),
+    '#description' => t('The VCS Terminal ID as given by the VCS as given by the vcs system.'),
     '#default_value' => isset($settings['merchant_key']) ? $settings['merchant_key'] : '',
     '#required' => TRUE,
   );
@@ -106,15 +98,13 @@ function commerce_vcs_redirect_form($form, &$form_state, $order, $payment_method
   // Build the data array that will be translated into hidden form values.
   $data = array(
     // Receiver Details
-    'merchant_id' => $settings['merchant_id'],
+    //'merchant_id' => $settings['merchant_id'],
     'p1' => $settings['merchant_key'],
     'return_url' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
     'p10' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
     'notify_url' => url('commerce_vcs/itn/' . $payment_method['instance_id'], array('absolute' => TRUE)),
 
     // Payer Details
-    'name_first' => $customer['first_name'],
-    'name_last' => $customer['last_name'],
     'CardholderEmail' => $customer['mail'],
 
     // Transaction Details
@@ -123,12 +113,8 @@ function commerce_vcs_redirect_form($form, &$form_state, $order, $payment_method
     'item_name' => t('Order @order_number at @store', array('@order_number' => $order->order_number, '@store' => variable_get('site_name', url('<front>', array('absolute' => TRUE))))),
     'p3' => t('Product count: !count', array('!count' => commerce_line_items_quantity($wrapper->commerce_line_items, commerce_product_line_item_types()))),
 
-    // Transaction Options
-    //'email_confirmation' => '',
   );
   
- // echo '<pre>'; print_r($data); echo '</pre>';
-  //exit;
   
   // Give other modules a chance to alter the payment settings before they're
   // sent off.
@@ -175,7 +161,6 @@ function commerce_vcs_server_url($server) {
   switch ($server) {
     case 'sandbox':
       return 'https://www.vcs.co.za/vvonline/ccform.asp';
-     //return 'https://codaptive.co.za/post-test/';
     case 'live':
       return 'https://www.vcs.co.za/vvonline/ccform.asp';
   }
@@ -197,7 +182,6 @@ function commerce_vcs_process_itn($payment_method) {
 
   // Order of the parameters is important. Also, we can't include extra data
   // that may have been passed in. The list of keys comes from:
-  //   https://www.vcs.co.za/c/std/pdt-itn-variables
   $keys = array('m_payment_id', 'pf_payment_id', 'payment_status', 'item_name', 'item_description', 'amount_gross', 'amount_fee', 'amount_net', 'custom_str1', 'custom_str2', 'custom_str3', 'custom_str4', 'custom_str5', 'custom_int1', 'custom_int2', 'custom_int3', 'custom_int4', 'custom_int5', 'name_first', 'name_last', 'email_address', 'p1');
   sort($keys);
   $security = array();
@@ -269,7 +253,7 @@ function commerce_vcs_process_itn($payment_method) {
 
   // Set the key payment method variables
   $merchant_settings = array(
-    'id' => $payment_method['settings']['merchant_id'],
+    //'id' => $payment_method['settings']['merchant_id'],
     'key' => $payment_method['settings']['p1'],
   );
 
