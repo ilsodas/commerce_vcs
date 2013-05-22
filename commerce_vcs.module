@@ -144,6 +144,7 @@ function commerce_vcs_redirect_form($form, &$form_state, $order, $payment_method
   }
   $data['signature'] = md5(implode('&', $signature));
 
+  $form['#method'] = 'post';
   $form['#action'] = commerce_vcs_server_url($settings['server']);
   $form['#attributes'] = array('name' => 'frmPay');
 
