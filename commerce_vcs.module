@@ -53,11 +53,11 @@ function commerce_vcs_settings_form($settings = NULL) {
     '#required' => TRUE,
   );
 
-  $form['merchant_key'] = array(
+  $form['p1'] = array(
     '#type' => 'textfield',
     '#title' => t('vcs Merchant Key'),
     '#description' => t('The Merchant Key as given by the vcs system.'),
-    '#default_value' => isset($settings['merchant_key']) ? $settings['merchant_key'] : '',
+    '#default_value' => isset($settings['p1']) ? $settings['p1'] : '',
     '#required' => TRUE,
   );
 
@@ -107,7 +107,7 @@ function commerce_vcs_redirect_form($form, &$form_state, $order, $payment_method
   $data = array(
     // Receiver Details
     'merchant_id' => $settings['merchant_id'],
-    'merchant_key' => $settings['merchant_key'],
+    'p1' => $settings['p1'],
     'return_url' => url('checkout/' . $order->order_id . '/payment/return/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
     'cancel_url' => url('checkout/' . $order->order_id . '/payment/back/' . $order->data['payment_redirect_key'], array('absolute' => TRUE)),
     'notify_url' => url('commerce_vcs/itn/' . $payment_method['instance_id'], array('absolute' => TRUE)),
@@ -265,7 +265,7 @@ function commerce_vcs_process_itn($payment_method) {
   // Set the key payment method variables
   $merchant_settings = array(
     'id' => $payment_method['settings']['merchant_id'],
-    'key' => $payment_method['settings']['merchant_key'],
+    'key' => $payment_method['settings']['p1'],
   );
 
   // Allow multi-seller stores by providing a hook to alter the merchant info
@@ -276,7 +276,7 @@ function commerce_vcs_process_itn($payment_method) {
     $function($merchant_settings, $order, $payment_method);
   }
 
-  // Validate the ITN by checking the merchant_id and merchant_key
+  // Validate the ITN by checking the merchant_id and p1
   if ($merchant_settings['id'] != $itn['merchant_id']) {
     commerce_payment_redirect_pane_previous_page($order);
     watchdog('commerce_vcs', 'ITN rejected: Invalid merchant_id specified (@merchant_id).', array('@merchant_id' => $itn['merchant_id']), WATCHDOG_ERROR);
