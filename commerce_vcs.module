@@ -182,7 +182,7 @@ function commerce_vcs_process_itn($payment_method) {
 
   // Order of the parameters is important. Also, we can't include extra data
   // that may have been passed in. The list of keys comes from:
-  $keys = array('m_payment_id', 'pf_payment_id', 'payment_status', 'item_name', 'item_description', 'amount_gross', 'amount_fee', 'amount_net', 'custom_str1', 'custom_str2', 'custom_str3', 'custom_str4', 'custom_str5', 'custom_int1', 'custom_int2', 'custom_int3', 'custom_int4', 'custom_int5', 'name_first', 'name_last', 'email_address', 'p1');
+  $keys = array('p1','p2', 'pf_payment_id', 'p3', 'p4', 'p5', 'p6', 'p7', 'item_name', 'p8', 'p9', 'p10', 'amount_fee', 'amount_net', 'custom_str1', 'custom_str2', 'custom_str3', 'custom_str4', 'custom_str5', 'custom_int1', 'custom_int2', 'custom_int3', 'custom_int4', 'custom_int5', 'name_first', 'name_last', 'email_address');
   sort($keys);
   $security = array();
   foreach ($keys as $key) {
@@ -237,14 +237,14 @@ function commerce_vcs_process_itn($payment_method) {
 
   // Exit if the ITN has already been processed.
   if (!empty($itn['pf_payment_id']) && $prior_itn = commerce_vcs_itn_load($itn['pf_payment_id'])) {
-    if ($prior_itn['payment_status'] == $itn['payment_status']) {
+    if ($prior_itn['p3'] == $itn['p3']) {
       watchdog('commerce_vcs', 'Attempted to process an ITN that has already been processed with transaction ID @txn_id.', array('@txn_id' => $itn['pf_payment_id']), WATCHDOG_NOTICE);
       return FALSE;
     }
   }
 
-  // Load the order in question and validate that the m_payment_id exists
-  list($order_id, $timestamp) = explode('-', $itn['m_payment_id']);
+  // Load the order in question and validate that the Reference Number (p2) exists
+  list($order_id, $timestamp) = explode('-', $itn['p2']);
   $order = commerce_order_load($order_id);
   if (!$order) {
     watchdog('commerce_vcs', 'Could not find order matching ITN order #', array(), WATCHDOG_ERROR);
@@ -273,16 +273,16 @@ function commerce_vcs_process_itn($payment_method) {
   }  
 
   // Process the ITN
-  if ($itn['payment_status'] == 'COMPLETE') {
+  if ($itn['p3'] == 'COMPLETE') {
     // Create a new payment transaction for the order.
     $transaction = commerce_payment_transaction_new('vcs', $order->order_id);
     $transaction->instance_id = $payment_method['instance_id'];
 
     $transaction->remote_id = $itn['pf_payment_id'];
-    $transaction->amount = commerce_currency_decimal_to_amount($itn['amount_gross'], 'ZAR');
+    $transaction->amount = commerce_currency_decimal_to_amount($itn['p6'], 'ZAR');
     $transaction->currency_code = 'ZAR';
     $transaction->payload[REQUEST_TIME] = $itn;
-    $transaction->remote_status = $itn['payment_status'];
+    $transaction->remote_status = $itn['p3'];
     $transaction->status = COMMERCE_PAYMENT_STATUS_SUCCESS;
     $transaction->message = t('The payment has completed.');
 
@@ -302,7 +302,7 @@ function commerce_vcs_process_itn($payment_method) {
   }
   else {
     commerce_payment_redirect_pane_previous_page($order);
-    watchdog('commerce_vcs', 'Invalid ITN payment status: @payment_status.', array('@payment_status' => $itn['payment_status']), WATCHDOG_ERROR);
+    watchdog('commerce_vcs', 'Invalid ITN payment status: @payment_status.', array('@payment_status' => $itn['p3']), WATCHDOG_ERROR);
     return FALSE;
   }
 
