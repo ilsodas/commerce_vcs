@@ -29,8 +29,8 @@ function commerce_vcs_commerce_payment_method_info() {
   $payment_methods = array();
 
   $payment_methods['commerce_vcs'] = array(
-    'title' => t('vcs'),
-    'description' => t('Integrates with the vcs payment gateway.'),
+    'title' => t('Virtual Card Services (VCS)'),
+    'description' => t('Integrates with the Virtual Card Services (VCS) payment gateway.'),
     'active' => TRUE,
     'offsite' => TRUE,
     'offsite_autoredirect' => TRUE,
@@ -47,15 +47,15 @@ function commerce_vcs_settings_form($settings = NULL) {
 
   $form['merchant_key'] = array(
     '#type' => 'textfield',
-    '#title' => t('VCS Terminal ID as given by the VCS'),
-    '#description' => t('The VCS Terminal ID as given by the VCS as given by the vcs system.'),
+    '#title' => t('Virtual Card Services (VCS) Terminal ID as given by the VCS'),
+    '#description' => t('The Virtual Card Services (VCS) Terminal ID as given by the VCS as given by the vcs system.'),
     '#default_value' => isset($settings['merchant_key']) ? $settings['merchant_key'] : '',
     '#required' => TRUE,
   );
 
   $form['server'] = array(
     '#type' => 'radios',
-    '#title' => t('vcs server'),
+    '#title' => t('Virtual Card Services (VCS) server'),
     '#options' => array(
       'sandbox' => ('Sandbox - use for testing'),
       'live' => ('Live - use for processing real transactions'),
@@ -145,7 +145,7 @@ function commerce_vcs_redirect_form($form, &$form_state, $order, $payment_method
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Proceed to vcs'),
+    '#value' => t('Proceed to Virtual Card Services (VCS)'),
   );
 
   return $form;
