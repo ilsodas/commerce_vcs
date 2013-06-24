@@ -1,4 +1,4 @@
-name = Virtual Card Services
+name = Virtual Card Services (VCS)
 description = Implements Virtual Card Services (VCS) payment services for use with Drupal Commerce.
 package = Commerce (contrib)
 dependencies[] = commerce
