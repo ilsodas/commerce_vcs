@@ -1,4 +1,4 @@
-Configuring the VCS (Virtual Card Services) module to work on your Commerce Kickstart website.
+Configuring the VCS (Virtual Card Services) module to work on your Drupal Commerce website.
 
 Step 01:
   - Log into your website (http://your-domain.com/user)
@@ -25,4 +25,4 @@ Step 08:
   - Select the 'Save' button. 
 Note: make sure that the live option is selected for your customers to make payments.
 
-**You have now successfully configured the VCS (Virtual Card Services) to work on your Commerce Kickstart website.**
+**You have now successfully configured the VCS (Virtual Card Services) to work on your Drupal Commerce website.**
