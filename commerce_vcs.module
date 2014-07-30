@@ -177,12 +177,12 @@ function commerce_vcs_server_url($server) {
  */
 function commerce_vcs_process_itn($payment_method) {
   $itn = $_POST;
-
+  
   /***** Verify the security hash *****/
 
   // Order of the parameters is important. Also, we can't include extra data
   // that may have been passed in. The list of keys comes from:
-  $keys = array('p1','p2', 'pf_payment_id', 'p3', 'p4', 'p5', 'p6', 'p7', 'item_name', 'p8', 'p9', 'p10', 'amount_fee', 'amount_net', 'custom_str1', 'custom_str2', 'custom_str3', 'custom_str4', 'custom_str5', 'custom_int1', 'custom_int2', 'custom_int3', 'custom_int4', 'custom_int5', 'name_first', 'name_last', 'email_address');
+  $keys = array('p1','p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'item_name', 'p8', 'p9', 'p10', 'amount_fee', 'amount_net', 'custom_str1', 'custom_str2', 'custom_str3', 'custom_str4', 'custom_str5', 'custom_int1', 'custom_int2', 'custom_int3', 'custom_int4', 'custom_int5', 'name_first', 'name_last', 'email_address');
   sort($keys);
   $security = array();
   foreach ($keys as $key) {
@@ -197,15 +197,20 @@ function commerce_vcs_process_itn($payment_method) {
   // actual implementation. The security provided by the hash is questionable anyway.
   if (FALSE && (isset($itn['security']) || $security != $itn['security'])) {
     watchdog('commerce_vcs', 'Security hash does not match', array(), WATCHDOG_ERROR);
-    return FALSE;
+    commerce_vcs_itn_response(t('Failed: Security hash does not match'));
+  }
+  
+  // Make sure Uti is available in lower-case
+  $itn['uti'] = NULL;
+  if (isset($itn['Uti'])) {
+    $itn['uti'] = $itn['Uti'];
   }
 
   /***** Verify the source IP address *****/
   $vcs_hosts = array(
-    'https://www.vcs.co.za/vvonline/ccform.asp',
-    'https://www.vcs.co.za/vvonline/ccform.asp',
-    'https://www.vcs.co.za/vvonline/ccform.asp',
-    'https://www.vcs.co.za/vvonline/ccform.asp',
+    'www.vcs.co.za',
+    'vcs.co.za',
+    'ftp.vcs.co.za',
   );
   $vcs_ips = array();
   foreach ($vcs_hosts as $hostname) {
@@ -216,8 +221,8 @@ function commerce_vcs_process_itn($payment_method) {
   $vcs_ips = array_unique($vcs_ips);
 
   if (!in_array($_SERVER['REMOTE_ADDR'], $vcs_ips)) {
-    watchdog('commerce_vcs', "Source IP address doesn't match a known vcs host", array(), WATCHDOG_ERROR);
-    return FALSE;
+    watchdog('commerce_vcs', 'Source IP address doesn\'t match a known VCS host: REMOTE_ADDR=!REMOTE_ADDR', array('!REMOTE_ADDR' => $_SERVER['REMOTE_ADDR']), WATCHDOG_ERROR);
+    commerce_vcs_itn_response(t('Failed: Source IP address doesn\'t match a known vcs host'));
   }
 
   // Process the HTTP request to validate the ITN.
@@ -227,34 +232,35 @@ function commerce_vcs_process_itn($payment_method) {
   // If an error occurred during processing, log the message and exit.
   if (property_exists($response, 'error')) {
     watchdog('commerce_vcs', 'Attempt to validate ITN failed with error @code: @error', array('@code' => $response->code, '@error' => $response->error), WATCHDOG_ERROR);
-    return FALSE;
+    commerce_vcs_itn_response(t('Failed: Failed: Attempt to validate ITN failed with error @code: @error', array('@code' => $response->code, '@error' => $response->error)));
   }
 
   if ($response->data == 'INVALID') {
     watchdog('commerce_vcs', 'Invalid ITN received and ignored due to INVALID response.', array(), WATCHDOG_ALERT);
-    return FALSE;
+    commerce_vcs_itn_response(t('Failed: Invalid ITN received and ignored due to INVALID response.'));
   }
 
   // Exit if the ITN has already been processed.
-  if (!empty($itn['pf_payment_id']) && $prior_itn = commerce_vcs_itn_load($itn['pf_payment_id'])) {
+  if (!empty($itn['uti']) && $prior_itn = commerce_vcs_itn_load($itn['uti'])) {
     if ($prior_itn['p3'] == $itn['p3']) {
-      watchdog('commerce_vcs', 'Attempted to process an ITN that has already been processed with transaction ID @txn_id.', array('@txn_id' => $itn['pf_payment_id']), WATCHDOG_NOTICE);
-      return FALSE;
+      watchdog('commerce_vcs', 'Attempted to process an ITN that has already been processed with transaction ID @txn_id.', array('@txn_id' => $itn['Uti']), WATCHDOG_NOTICE);
+      commerce_vcs_itn_response(t('Failed: Attempted to process an ITN that has already been processed with transaction ID @txn_id.', array('@txn_id' => $itn['Uti'])));
     }
   }
-
+  
   // Load the order in question and validate that the Reference Number (p2) exists
   list($order_id, $timestamp) = explode('-', $itn['p2']);
   $order = commerce_order_load($order_id);
   if (!$order) {
     watchdog('commerce_vcs', 'Could not find order matching ITN order #', array(), WATCHDOG_ERROR);
-    return FALSE;
+    commerce_vcs_itn_response(t('Failed: Could not find order matching ITN order #'));
   }
 
-  // Set the key payment method variables
+  // Set the key payment method variables  
   $merchant_settings = array(
-    //'id' => $payment_method['settings']['merchant_id'],
-    'key' => $payment_method['settings']['p1'],
+    // 'id' => $payment_method['settings']['merchant_id'],
+    // 'key' => $payment_method['settings']['p1'],
+    'id' => $payment_method['settings']['merchant_key'],
   );
 
   // Allow multi-seller stores by providing a hook to alter the merchant info
@@ -265,20 +271,33 @@ function commerce_vcs_process_itn($payment_method) {
     $function($merchant_settings, $order, $payment_method);
   }
 
-  // Validate the ITN by checking the merchant_id and p1
-  if ($merchant_settings['id'] != $itn['merchant_id']) {
+  // Validate the ITN by checking the merchant_id and p1  
+  if ($merchant_settings['id'] != $itn['p1']) {
     commerce_payment_redirect_pane_previous_page($order);
-    watchdog('commerce_vcs', 'ITN rejected: Invalid merchant_id specified (@merchant_id).', array('@merchant_id' => $itn['merchant_id']), WATCHDOG_ERROR);
-    return FALSE;
+    watchdog('commerce_vcs', 'ITN rejected: Invalid merchant_id specified (@merchant_id).', array('@merchant_id' => $itn['p1']), WATCHDOG_ERROR);
+    commerce_vcs_itn_response(t('Failed: ITN rejected: Invalid merchant_id specified (@merchant_id).', array('@merchant_id' => $itn['p1'])));
   }  
 
+  // Get transaction status from compound value, 
+  // Note: trim is required to remove space at end of string
+  $authorisation_number = NULL;
+  $transaction_status = NULL;
+  if (strlen($itn['p3']) > 7) {
+    $authorisation_number = substr(trim($itn['p3']), 0, 6);
+    $transaction_status = substr(trim($itn['p3']), 6);
+  }
+  
   // Process the ITN
-  if ($itn['p3'] == 'COMPLETE') {
+  if ($transaction_status == 'APPROVED') {
+    // Add our transaction values, we only add them if they valid
+    $itn['authorisation_number'] = $authorisation_number;
+    $itn['transaction_status'] = $transaction_status;
+  
     // Create a new payment transaction for the order.
     $transaction = commerce_payment_transaction_new('vcs', $order->order_id);
     $transaction->instance_id = $payment_method['instance_id'];
 
-    $transaction->remote_id = $itn['pf_payment_id'];
+    $transaction->remote_id = $itn['CardHolderIpAddr'];
     $transaction->amount = commerce_currency_decimal_to_amount($itn['p6'], 'ZAR');
     $transaction->currency_code = 'ZAR';
     $transaction->payload[REQUEST_TIME] = $itn;
@@ -289,21 +308,27 @@ function commerce_vcs_process_itn($payment_method) {
     commerce_payment_transaction_save($transaction);
 
     commerce_payment_redirect_pane_next_page($order);
-    watchdog('commerce_vcs', 'ITN processed for Order @order_number with ID @txn_id.', array('@txn_id' => $itn['pf_payment_id'], '@order_number' => $order->order_number), WATCHDOG_INFO);
+    watchdog('commerce_vcs', 'ITN processed for Order @order_number with ID @txn_id.', array('@txn_id' => $itn['uti'], '@order_number' => $order->order_number), WATCHDOG_INFO);
 
     // Necessary to trigger order completion
     $order = commerce_order_status_update($order, 'checkout_complete');
     commerce_checkout_complete($order);
     
+    // Add values required to save itn
+    $itn['merchant_id'] = $merchant_settings['id'];
+    $itn['email_address'] = $order->mail;
     $itn['transaction_id'] = $transaction->transaction_id;
+    $itn['payment_status'] = $itn['p3'];
+    $itn['amount_gross'] = $itn['p6'];
+    $itn['amount_fee'] = 0;                 // This is not submitted to us as part of ITN, it will need to be calculated
     $itn['order_id'] = $order->order_id;
     $itn['server'] = $server;
     commerce_vcs_itn_save($itn);
   }
   else {
     commerce_payment_redirect_pane_previous_page($order);
-    watchdog('commerce_vcs', 'Invalid ITN payment status: @payment_status.', array('@payment_status' => $itn['p3']), WATCHDOG_ERROR);
-    return FALSE;
+    watchdog('commerce_vcs', 'Invalid ITN payment status: @payment_status. Bank code=!code, Status=!status', array('@payment_status' => $itn['p3'], '!code' => $authorisation_number, '!status' => $transaction_status), WATCHDOG_ERROR);
+    commerce_vcs_itn_response(t('Failed: Invalid ITN payment status: @payment_status. Bank code=!code, Status=!status', array('@payment_status' => $itn['p3'], '!code' => $authorisation_number, '!status' => $transaction_status)));
   }
 
   // Invoke the hook here so implementations have access to the order and
@@ -311,6 +336,20 @@ function commerce_vcs_process_itn($payment_method) {
   // payment transaction ID if created in the payment method's default
   // process callback.
   module_invoke_all('commerce_vcs_itn_process', $order, $payment_method, $itn);
+  
+  // Success
+  commerce_vcs_itn_response(t('Accepted'));
+}
+
+/**
+ * Build required response format required by VCS.
+ *
+ * @return
+ *   String status message wrapped with required tag name
+ */
+function commerce_vcs_itn_response($message) {
+  print '<CallbackResponse>' . $message . '</CallbackResponse>';
+  exit(0);
 }
 
 /**
@@ -320,12 +359,12 @@ function commerce_vcs_process_itn($payment_method) {
  *   The ID of the ITN to load.
  * @param $type
  *   The type of ID you've specified, either the serial numeric itn_id or the
- *     actual vcs pf_payment_id. Defaults to pf_payment_id.
+ *     actual vcs Uti. Defaults to Uti.
  *
  * @return
  *   The original ITN with some meta data related to local processing.
  */
-function commerce_vcs_itn_load($id, $type = 'pf_payment_id') {
+function commerce_vcs_itn_load($id, $type = 'uti') {
   return db_select('commerce_vcs_itn', 'cpi')
     ->fields('cpi')
     ->condition('cpi.' . $type, $id)
@@ -346,7 +385,7 @@ function commerce_vcs_itn_load($id, $type = 'pf_payment_id') {
  *     used locally.
  */
 function commerce_vcs_itn_save(&$itn) {
-  if (!empty($itn['itn_id']) && commerce_vcs_itn_load($itn['pf_payment_id'])) {
+  if (!empty($itn['itn_id']) && commerce_vcs_itn_load($itn['uti'])) {
     $itn['changed'] = REQUEST_TIME;
     return drupal_write_record('commerce_vcs_itn', $itn, 'itn_id');
   }

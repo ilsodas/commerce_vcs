@@ -19,7 +19,7 @@ function commerce_vcs_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
-      'pf_payment_id' => array(
+      'uti' => array(
         'description' => 'The vcs payment ID.',
         'type' => 'varchar',
         'length' => 255,
@@ -27,7 +27,7 @@ function commerce_vcs_schema() {
         'default' => '',
       ),
       'merchant_id' => array(
-        'description' => 'The merchant_id of the payment receiever.',
+        'description' => 'The merchant_id of the payment receiver.',
         'type' => 'varchar',
         'length' => 255,
         'not null' => TRUE,
@@ -114,7 +114,7 @@ function commerce_vcs_schema() {
       ),
     ),
     'indexes' => array(
-      'pf_payment_id' => array('pf_payment_id'),
+      'uti' => array('uti'),
     ),
   );
 

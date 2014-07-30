@@ -23,6 +23,28 @@ Step 07:
 
 Step 08:
   - Select the 'Save' button. 
-Note: make sure that the live option is selected for your customers to make payments.
+  - Note: make sure that the live option is selected for your customers to make payments.
 
+Step 09:
+  - Log into VCS Merchant back-office
+  
+Step 10:
+  - Go to Merchant Administration
+  
+Step 11:
+  - Go to "3. VCS Interfacing (page1)"
+  
+Step 12:
+  - Add full "Approved page URL" and "Declined page URL" can be custom content nodes. Must include http or https
+  
+Step 13:
+  - Go to "6. Callback Settings"
+  
+Step 14:
+  - Add "Approved Callback URL" and "Declined Callback URL"  to be http:your-domain.com/commerce_vcs/itn/%commerce_payment_method_instance where %commerce_payment_method_instance = payment instance id default instance id = commerce_vcs|commerce_payment_commerce_vcs
+  - EG: http://www.examle.com/commerce_vcs/itn/commerce_vcs|commerce_payment_commerce_vcs
+
+Step 15:
+  - Set "CallBack Method" to POST
+    
 **You have now successfully configured the VCS (Virtual Card Services) to work on your Commerce Kickstart website.**
