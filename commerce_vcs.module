@@ -145,7 +145,7 @@ function commerce_vcs_redirect_form($form, &$form_state, $order, $payment_method
 
   $form['submit'] = array(
     '#type' => 'submit',
-    '#value' => t('Proceed to Virtual Card Services (VCS)'),
+    '#value' => t('Proceed to Virtual Card Services(VCS)'),
   );
 
   return $form;
